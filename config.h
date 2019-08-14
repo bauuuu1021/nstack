@@ -15,7 +15,7 @@
  * How often should periodic tasks run.
  * This is handled by IP but it's meant to be more generic.
  */
-#define NSTACK_PERIODIC_EVENT_SEC 10
+#define NSTACK_PERIODIC_EVENT_SEC 1
 
 /**
  * ARP Configuration.

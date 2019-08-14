@@ -434,5 +434,23 @@ int nstack_tcp_bind(struct nstack_sock *sock)
 
 int nstack_tcp_send(struct nstack_sock *sock, const struct nstack_dgram *dgram)
 {
-    return -1;
+    uint8_t buf[sizeof(struct tcp_hdr) + dgram->buf_size];
+    struct tcp_hdr *tcp = (struct tcp_hdr *) buf;
+    uint8_t *payload = tcp->opt;
+
+    if (!(dgram->buf_size > 0 && dgram->buf_size < TCP_MAXLEN)) {
+        return -EINVAL;
+    }
+
+    /*
+     * TCP Header.
+     */
+    memset(tcp,0,sizeof(struct tcp_hdr) + dgram->buf_size);
+    tcp->tcp_sport = sock->info.sock_addr.port;
+    tcp->tcp_dport = dgram->dstaddr.port;
+    tcp->tcp_checksum = 0;
+    
+    memcpy(payload, dgram->buf, dgram->buf_size);
+    tcp_hton(&sock->info.sock_addr,&dgram->dstaddr,tcp, tcp,sizeof(struct tcp_hdr) +dgram->buf_size);
+    return ip_send(dgram->dstaddr.inet4_addr, IP_PROTO_TCP, buf, sizeof(buf));
 }

@@ -12,6 +12,8 @@
 #include "linker_set.h"
 #include "nstack_in.h"
 
+#define TCP_MAXLEN 65507
+
 /**
  * Type for an TCP port number.
  */

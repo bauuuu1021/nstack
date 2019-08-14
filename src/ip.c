@@ -168,7 +168,7 @@ int ip_input(const struct ether_hdr *e_hdr, uint8_t *payload, size_t bsize)
         char dst_str[IP_STR_LEN];
 
         ip2str(ip->ip_dst, dst_str);
-        LOG(LOG_WARN, "Invalid destination address %s", dst_str);
+        //LOG(LOG_WARN, "Invalid destination address %s", dst_str);
 
         if (NSTACK_IP_SEND_HOSTUNREAC) {
             return icmp_generate_dest_unreachable(ip, ICMP_CODE_HOSTUNREAC,

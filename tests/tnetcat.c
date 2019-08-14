@@ -21,7 +21,9 @@ int main(void)
 
         memset(buf, 0, sizeof(buf));
         r = nstack_recvfrom(sock, buf, sizeof(buf) - 1, 0, &addr);
-        if (r > 0)
+        if (r > 0) {
             write(STDOUT_FILENO, buf, r);
+            nstack_sendto(sock, buf, r, 0, &addr);
+        }
     }
 }

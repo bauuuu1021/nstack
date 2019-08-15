@@ -5,6 +5,7 @@
 #include <time.h>
 #endif
 
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -209,6 +210,7 @@ static void tcp_hton(const struct nstack_sockaddr *restrict src,
     net->tcp_win_size = htons(host->tcp_win_size);
     net->tcp_urg_ptr = htons(host->tcp_urg_ptr);
     /* TODO Handle opts */
+    
     net->tcp_checksum = 0;
     net->tcp_checksum = tcp_checksum(src, dst, net, bsize);
 }
@@ -434,7 +436,7 @@ int nstack_tcp_bind(struct nstack_sock *sock)
 
 int nstack_tcp_send(struct nstack_sock *sock, const struct nstack_dgram *dgram)
 {
-    uint8_t buf[sizeof(struct tcp_hdr) + dgram->buf_size];
+    uint8_t buf[sizeof(struct tcp_hdr) + dgram->buf_size+12];
     struct tcp_hdr *tcp = (struct tcp_hdr *) buf;
     uint8_t *payload = tcp->opt;
 
@@ -445,12 +447,28 @@ int nstack_tcp_send(struct nstack_sock *sock, const struct nstack_dgram *dgram)
     /*
      * TCP Header.
      */
-    memset(tcp,0,sizeof(struct tcp_hdr) + dgram->buf_size);
+    memset(tcp,0,sizeof(struct tcp_hdr) + dgram->buf_size+12);
     tcp->tcp_sport = sock->info.sock_addr.port;
     tcp->tcp_dport = dgram->dstaddr.port;
+    tcp->tcp_win_size = 502;
+    tcp->tcp_seqno = 1;
+    tcp->tcp_ack_num = 1;
+    tcp->tcp_flags |= 0x6008;
+    tcp->opt[0] = 0x1;
+    tcp->opt[1] = 0x1;
+    tcp->opt[2] = 0x8;
+    tcp->opt[3] = 0xa;/*
+    tcp->opt[4] = 0x77;
+    tcp->opt[5] = 0x01;
+    tcp->opt[6] = 0x10;
+    tcp->opt[7] = 0xe3;
+    tcp->opt[8] = 0xdb;
+    tcp->opt[9] = 0xb8;
+    tcp->opt[10] = 0xa8;
+    tcp->opt[11] = 0x9d;*/
     tcp->tcp_checksum = 0;
     
-    memcpy(payload, dgram->buf, dgram->buf_size);
-    tcp_hton(&sock->info.sock_addr,&dgram->dstaddr,tcp, tcp,sizeof(struct tcp_hdr) +dgram->buf_size);
+    memcpy(payload+12, dgram->buf, dgram->buf_size);
+    tcp_hton(&sock->info.sock_addr,&dgram->dstaddr,tcp, tcp,sizeof(struct tcp_hdr) +dgram->buf_size+12);
     return ip_send(dgram->dstaddr.inet4_addr, IP_PROTO_TCP, buf, sizeof(buf));
 }
